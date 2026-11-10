@@ -283,21 +283,6 @@ export const StepClosure: React.FC<StepClosureProps> = ({
           )}
         </div>
       </div>
-
-      {/* Declaración */}
-      <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-        <label className="flex items-start gap-2.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={firmaConductor}
-            onChange={(e) => onFirmaConductorChange(e.target.checked)}
-            className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300 cursor-pointer shrink-0"
-          />
-          <span className="text-xs text-slate-700 leading-snug">
-            Certifico bajo gravedad de juramento que la información diligenciada corresponde al estado real del vehículo y de mis condiciones al momento de la inspección.
-          </span>
-        </label>
-      </div>
     </div>
   );
 };

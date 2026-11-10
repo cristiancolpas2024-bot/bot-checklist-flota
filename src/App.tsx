@@ -24,7 +24,6 @@ import { Step1General } from './components/Wizard/Step1General';
 import { StepInspection } from './components/Wizard/StepInspection';
 import { StepCartwheels } from './components/Wizard/StepCartwheels';
 import { StepClosure } from './components/Wizard/StepClosure';
-import { StepSummary } from './components/Wizard/StepSummary';
 import { StepConfirmation } from './components/Wizard/StepConfirmation';
 import { PrintVoucher } from './components/PrintVoucher';
 
@@ -32,7 +31,7 @@ import { ArrowLeft, ArrowRight, AlertTriangle } from 'lucide-react';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<
-    'cover' | 'wizard' | 'summary' | 'confirmation'
+    'cover' | 'wizard' | 'confirmation'
   >('cover');
 
   const [currentStep, setCurrentStep] = useState<number>(1);
@@ -123,10 +122,6 @@ export default function App() {
         if (!carretilla2.llantasRodamientos) errors.carr2_llantas = 'Requerido';
         if (!carretilla2.etiquetaCoherente) errors.carr2_etiqueta = 'Requerido';
       }
-    } else if (currentStep === 13) {
-      if (!firmaConductor) {
-        errors.firma = 'Debes aceptar la declaración juramentada para continuar';
-      }
     }
 
     setStepErrors(errors);
@@ -152,8 +147,8 @@ export default function App() {
       setCurrentStep((prev) => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setCurrentView('summary');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Direct submission to digital pass confirmation: no revision previa
+      handleConfirmSubmit();
     }
   };
 
@@ -182,8 +177,8 @@ export default function App() {
       setCurrentStep((prev) => prev + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      setCurrentView('summary');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Direct submission to digital pass confirmation: no revision previa
+      handleConfirmSubmit();
     }
   };
 
@@ -382,36 +377,6 @@ export default function App() {
           </div>
         )}
 
-        {currentView === 'summary' && (
-          <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-            <div className="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden text-slate-900 p-5 sm:p-6">
-              <div className="mb-4 pb-2 border-b border-slate-100">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
-                  Revisión Previa
-                </span>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
-                  Resumen de Inspección
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Verifica que los datos y fallas registradas concuerden antes de guardar.
-                </p>
-              </div>
-
-              <StepSummary
-                data={currentChecklistData}
-                fallasCriticas={fallasCriticas}
-                totalNoCumple={totalNoCumple}
-                onConfirmSubmit={handleConfirmSubmit}
-                onGoBack={() => {
-                  setCurrentStep(13);
-                  setCurrentView('wizard');
-                }}
-                isSubmitting={isSubmitting}
-              />
-            </div>
-          </div>
-        )}
-
         {currentView === 'confirmation' && lastSubmittedRecord && (
           <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
             <StepConfirmation
@@ -442,10 +407,21 @@ export default function App() {
 
             <button
               type="button"
+              disabled={isSubmitting}
               onClick={handleNextStep}
-              className="py-2.5 px-6 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+              className={`py-2.5 px-6 rounded-lg font-bold text-xs sm:text-sm flex items-center gap-2 transition-colors cursor-pointer shadow-xs ${
+                currentStep === 13
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                  : 'bg-amber-500 hover:bg-amber-400 text-slate-950'
+              } disabled:opacity-50`}
             >
-              <span>{currentStep === 13 ? 'Ver Resumen' : 'Siguiente'}</span>
+              <span>
+                {currentStep === 13
+                  ? isSubmitting
+                    ? 'Finalizando...'
+                    : 'Finalizar y Generar Pase'
+                  : 'Siguiente'}
+              </span>
               <ArrowRight className="w-4 h-4 stroke-[3]" />
             </button>
           </div>
