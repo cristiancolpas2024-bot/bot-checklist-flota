@@ -1,0 +1,6 @@
+{
+  "name": "Check List Camiones BU COL (Contingencia)",
+  "description": "Aplicación de contingencia para inspección preoperacional y retorno de camiones en patios de distribución BU COL - Logística Conectamos MAZ.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
