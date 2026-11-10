@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ChecklistData,
   TipoCheckList,
@@ -12,9 +12,7 @@ import {
   evaluarAptitudSugerida,
   PASOS_META,
 } from './config/checklistItems';
-import {
-  saveChecklist,
-} from './services/storage';
+import { enviarChecklist, ErrorValidacion, leerCola, escucharCola, reenviarPendientes } from './services/remote';
 
 // Components
 import { Header } from './components/Header';
@@ -75,6 +73,11 @@ export default function App() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [showStepValidationAlert, setShowStepValidationAlert] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string>('');
+  const [ultimoPendiente, setUltimoPendiente] = useState<boolean>(false);
+  const [pendientes, setPendientes] = useState<number>(() => leerCola().length);
+
+  useEffect(() => escucharCola(setPendientes), []);
 
   // Validation logic
   const validateCurrentStep = (): boolean => {
@@ -209,10 +212,12 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleConfirmSubmit = () => {
+  const handleConfirmSubmit = async () => {
+    if (isSubmitting) return;
     setIsSubmitting(true);
+    setSubmitError('');
     try {
-      const saved = saveChecklist({
+      const { record: saved, pendiente } = await enviarChecklist({
         regional: 'Norte',
         centroDistribucion,
         tipo,
@@ -234,10 +239,17 @@ export default function App() {
       });
 
       setLastSubmittedRecord(saved);
+      setUltimoPendiente(pendiente);
       setCurrentView('confirmation');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (e) {
-      console.error('Error al guardar:', e);
+      console.error('Error al enviar:', e);
+      setSubmitError(
+        e instanceof ErrorValidacion
+          ? e.message
+          : 'No se pudo registrar el checklist. Intenta de nuevo.'
+      );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsSubmitting(false);
     }
@@ -270,6 +282,17 @@ export default function App() {
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
       <Header onReset={handleResetChecklist} />
 
+      {pendientes > 0 && (
+        <div role="status" className="bg-amber-100 border-b border-amber-300 text-amber-900 text-xs font-semibold px-4 py-2 flex items-center justify-center gap-3 print:hidden">
+          <span>
+            {pendientes} checklist{pendientes > 1 ? 's' : ''} por enviar. Se enviará{pendientes > 1 ? 'n' : ''} al recuperar señal.
+          </span>
+          <button type="button" onClick={() => reenviarPendientes()} className="underline font-bold">
+            Enviar ahora
+          </button>
+        </div>
+      )}
+
       {currentView === 'wizard' && (
         <ProgressBar currentStep={currentStep} totalSteps={13} />
       )}
@@ -295,6 +318,13 @@ export default function App() {
                   {currentStep} / 13
                 </span>
               </div>
+
+              {submitError && (
+                <div role="alert" className="mb-4 p-3 rounded-lg bg-red-600 text-white text-xs font-semibold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>No se registró el checklist: {submitError}</span>
+                </div>
+              )}
 
               {showStepValidationAlert && (
                 <div className="mb-4 p-3 rounded-lg bg-red-600 text-white text-xs font-semibold flex items-center gap-2">
@@ -379,6 +409,11 @@ export default function App() {
 
         {currentView === 'confirmation' && lastSubmittedRecord && (
           <div className="w-full max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+            {ultimoPendiente && (
+              <div role="status" className="mb-4 p-3 rounded-lg bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold">
+                Sin señal: el checklist quedó guardado en este celular y se enviará solo al recuperar conexión. El folio se asigna al enviarse.
+              </div>
+            )}
             <StepConfirmation
               record={lastSubmittedRecord}
               onNewChecklist={handleResetChecklist}
