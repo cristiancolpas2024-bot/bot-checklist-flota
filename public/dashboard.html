@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Tablero Check List</title>
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --asphalt:#1C2430; --asphalt-2:#2A3442;
+  --paper:#F1F2EF; --surface:#FCFCFB; --line:#DEE0DA; --grid:#ECEDE9;
+  --ink:#151A21; --ink-2:#52514E; --muted:#6B7280;
+  --plate:#F7C600;
+  --good:#0CA30C; --critical:#D03B3B; --series:#2A78D6;
+  --good-text:#0B7A0B; --crit-text:#B02A2A;
+  --focus:#2A78D6; --r:10px;
+  --cond:"Barlow Condensed","Arial Narrow",sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.hidden{display:none !important}
+.num{font-variant-numeric:tabular-nums}
+
+/* Login */
+.login{min-height:100dvh;display:grid;place-items:center;padding:24px 16px;background:var(--asphalt)}
+.login form{width:100%;max-width:380px;background:var(--surface);border-radius:14px;padding:28px}
+.login h1{font-family:var(--cond);font-size:32px;line-height:1;margin:14px 0 4px}
+.login p{color:var(--ink-2);margin:0 0 20px}
+.lbl{display:block;font-weight:600;margin:0 0 6px}
+.input{width:100%;min-height:44px;border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px}
+.input:focus{outline:none;border-color:var(--ink)}
+.fld{margin:0 0 14px}
+.msg{font-size:14px;margin:0 0 12px;color:var(--crit-text);font-weight:600;min-height:20px}
+.btn{min-height:42px;border-radius:8px;border:1.5px solid var(--ink);background:var(--ink);color:#fff;font-weight:600;padding:0 16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.gold{background:var(--plate);color:var(--ink);border-color:var(--ink)}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.55;cursor:progress}
+.plate{display:inline-flex;align-items:center;justify-content:center;background:var(--plate);border:2px solid var(--ink);border-radius:6px;font-family:var(--cond);font-weight:700;letter-spacing:.06em;padding:1px 8px;font-size:16px;line-height:1.3;color:var(--ink)}
+.plate.lg{font-size:30px;padding:2px 14px;border-width:3px;border-radius:8px}
+
+/* Shell */
+.bar{background:var(--asphalt);color:#fff}
+.bar .in{max-width:1320px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:14px;min-height:60px}
+.bar h1{font-family:var(--cond);font-size:22px;margin:0;flex:1;line-height:1.1}
+.bar h1 small{display:block;font-family:var(--body);font-size:13px;color:#B9C0CA;font-weight:500}
+.bar .who{font-size:14px;color:#D5DAE1}
+.bar .btn.ghost{color:#fff;border-color:#4A5565}
+.page{max-width:1320px;margin:0 auto;padding:18px 20px 60px}
+
+.filters{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;margin:0 0 16px}
+.filters .fld{margin:0}
+.filters .lbl{font-size:13px;color:var(--ink-2);margin-bottom:4px}
+.filters .input{min-height:40px;width:auto}
+.quick{display:flex;gap:4px;background:var(--paper);border-radius:8px;padding:3px}
+.quick button{border:0;background:transparent;border-radius:6px;padding:7px 10px;font-weight:600;font-size:14px;color:var(--ink-2)}
+.quick button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.filters .spacer{flex:1}
+.updated{font-size:13px;color:var(--muted);align-self:center}
+
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:0 0 16px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.kpi .v{font-family:var(--cond);font-weight:700;font-size:38px;line-height:1}
+.kpi .l{font-size:13px;color:var(--ink-2);font-weight:600;margin-top:6px}
+.kpi .s{font-size:13px;color:var(--muted);margin-top:2px}
+.kpi.hero{background:var(--asphalt);border-color:var(--asphalt);color:#fff}
+.kpi.hero .l,.kpi.hero .s{color:#C3C9D2}
+.st{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:13px}
+.st svg{width:14px;height:14px}
+.st.ok{color:var(--good-text)} .st.bad{color:var(--crit-text)}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;min-width:0}
+.panel h2{font-size:16px;font-weight:700;margin:0}
+.panel .sub{font-size:13px;color:var(--muted);margin:2px 0 12px}
+.ph{display:flex;align-items:flex-start;gap:12px;justify-content:space-between;margin-bottom:10px}
+.c12{grid-column:span 12}.c7{grid-column:span 7}.c5{grid-column:span 5}.c6{grid-column:span 6}
+.legend{display:flex;gap:14px;font-size:13px;color:var(--ink-2);flex-wrap:wrap}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+
+svg.chart{width:100%;height:auto;display:block;overflow:visible}
+svg.chart text{font-family:var(--body);font-size:11px;fill:var(--muted)}
+
+.hbars{display:grid;gap:9px}
+.hb{display:grid;grid-template-columns:minmax(120px,38%) 1fr auto;align-items:center;gap:10px;font-size:14px}
+.hb .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb .track{height:14px;display:flex;gap:2px;align-items:stretch}
+.hb .seg{height:100%;min-width:2px}
+.hb .seg:last-child{border-radius:0 4px 4px 0}
+.hb .val{font-size:13px;color:var(--ink-2);min-width:56px;text-align:right}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:5px;background:#FBE9E7;color:var(--crit-text);margin-left:6px;vertical-align:1px}
+.empty{color:var(--muted);padding:24px 0;text-align:center;font-size:14px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;color:var(--ink-2);font-weight:700;padding:8px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--grid);vertical-align:middle}
+td.r,th.r{text-align:right}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover{background:#F5F6F2}
+.tablewrap{overflow-x:auto}
+.pager{display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:10px;font-size:14px;color:var(--ink-2)}
+.search{min-height:38px;width:160px;text-transform:uppercase}
+
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;font-size:13px;padding:8px 10px;border-radius:8px;z-index:60;max-width:280px;box-shadow:0 6px 18px rgba(0,0,0,.2);line-height:1.4}
+.tip b{display:block;margin-bottom:2px}
+
+/* Detalle */
+.drawer-bg{position:fixed;inset:0;background:rgba(21,26,33,.45);z-index:50}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--surface);z-index:51;overflow-y:auto;padding:20px 22px 40px;box-shadow:-10px 0 30px rgba(0,0,0,.2)}
+.drawer .top{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.drawer .top .btn{margin-left:auto}
+.drawer dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0 0 16px}
+.drawer dt{color:var(--ink-2)} .drawer dd{margin:0;font-weight:600}
+.drawer h3{font-size:14px;margin:18px 0 6px;padding-top:12px;border-top:1px solid var(--line)}
+.ans{display:flex;gap:10px;align-items:flex-start;padding:5px 0;font-size:14px}
+.ans .res{flex:none;width:92px;font-weight:700;font-size:12px}
+.ans.no .res{color:var(--crit-text)} .ans.ok .res{color:var(--good-text)} .ans.na .res{color:var(--muted)}
+.ans small{display:block;color:var(--ink-2)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(21,26,33,.55);z-index:70;display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);border-radius:14px;padding:24px;width:100%;max-width:400px}
+.modal h2{font-family:var(--cond);font-size:28px;margin:0 0 6px;line-height:1}
+.modal p{color:var(--ink-2);margin:0 0 16px}
+.modal .row{display:flex;gap:10px;justify-content:flex-end}
+.progress-note{font-size:13px;color:var(--ink-2)}
+
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.c7,.c5,.c6{grid-column:span 12}}
+@media (max-width:600px){.kpis{grid-template-columns:repeat(2,1fr)}.bar .who{display:none}.page{padding:14px 16px 48px}.hb{grid-template-columns:110px 1fr auto}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+
+<section class="login" id="login">
+  <form id="login-form" autocomplete="on">
+    <span class="plate lg">TABLERO</span>
+    <h1>Check List Camiones</h1>
+    <p>Acceso para supervisores de flota.</p>
+    <div class="fld"><label class="lbl" for="email">Correo</label><input class="input" id="email" type="email" autocomplete="username" required></div>
+    <div class="fld"><label class="lbl" for="pass">Contraseña</label><input class="input" id="pass" type="password" autocomplete="current-password" required></div>
+    <div class="msg" id="login-msg" role="alert"></div>
+    <button class="btn block" type="submit" id="login-btn">Ingresar</button>
+  </form>
+</section>
+
+<div id="shell" class="hidden">
+  <header class="bar"><div class="in">
+    <h1>Check List Camiones <small>Tablero de supervisión</small></h1>
+    <span class="who" id="who"></span>
+    <button class="btn ghost" type="button" id="btn-pass">Cambiar contraseña</button>
+    <button class="btn ghost" type="button" id="btn-out">Salir</button>
+  </div></header>
+
+  <div class="page">
+    <div class="filters" role="search">
+      <div class="fld"><span class="lbl">Periodo</span>
+        <div class="quick" id="quick">
+          <button type="button" data-q="0">Hoy</button>
+          <button type="button" data-q="6" aria-pressed="true">7 días</button>
+          <button type="button" data-q="29">30 días</button>
+        </div></div>
+      <div class="fld"><label class="lbl" for="f-desde">Desde</label><input class="input" type="date" id="f-desde"></div>
+      <div class="fld"><label class="lbl" for="f-hasta">Hasta</label><input class="input" type="date" id="f-hasta"></div>
+      <div class="fld"><label class="lbl" for="f-centro">Centro</label><select class="input" id="f-centro"><option value="">Todos</option></select></div>
+      <div class="fld"><label class="lbl" for="f-tipo">Tipo</label><select class="input" id="f-tipo"><option value="">Todos</option><option>Salida</option><option>Retorno</option><option>Relevo</option></select></div>
+      <span class="spacer"></span>
+      <span class="updated" id="updated"></span>
+      <button class="btn ghost" type="button" id="btn-refresh">Actualizar</button>
+      <button class="btn gold" type="button" id="btn-export">Exportar Excel</button>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="grid">
+      <section class="panel c12">
+        <div class="ph"><div><h2>Checklists por día</h2><div class="sub">Resultado de cada inspección registrada</div></div>
+          <div class="legend"><span><i style="background:var(--good)"></i>Apto</span><span><i style="background:var(--critical)"></i>No apto</span></div></div>
+        <div id="ch-dias"></div>
+      </section>
+      <section class="panel c5">
+        <h2>Por centro de distribución</h2><div class="sub">Checklists registrados y no aptos</div>
+        <div id="ch-centros"></div>
+      </section>
+      <section class="panel c7">
+        <h2>Puntos que más fallan</h2><div class="sub">Veces marcado como no cumple en el periodo</div>
+        <div id="ch-fallas"></div>
+      </section>
+      <section class="panel c12">
+        <h2>Placas con novedades</h2><div class="sub">Vehículos con algún checklist no apto o con 3 o más puntos sin cumplir</div>
+        <div class="tablewrap" id="tb-placas"></div>
+      </section>
+      <section class="panel c12">
+        <div class="ph"><div><h2>Registros</h2><div class="sub">Seleccione una fila para ver el detalle completo</div></div>
+          <input class="input search" id="f-placa" placeholder="Buscar placa" maxlength="6" aria-label="Buscar placa"></div>
+        <div class="tablewrap" id="tb-reg"></div>
+        <div class="pager" id="pager"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="tip hidden" id="tip" role="tooltip"></div>
+<div id="overlay"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="/assets/config.js"></script>
+<script>
+(() => {
+"use strict";
+const C = window.CL_CONFIG;
+const sb = window.supabase.createClient(C.url, C.key, { auth: { persistSession: true, autoRefreshToken: true } });
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const fmt = (n) => Number(n || 0).toLocaleString("es-CO");
+const LS = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
+const ICON = {
+  ok: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  bad: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>'
+};
+const estadoTag = (e) => e === "APTO" ? `<span class="st ok">${ICON.ok}Apto</span>` : `<span class="st bad">${ICON.bad}No apto</span>`;
+
+/* Fechas (Colombia, UTC-5 sin horario de verano) */
+const hoy = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota" }).format(new Date());
+const addDays = (s, n) => { const d = new Date(s + "T12:00:00Z"); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+const startOf = (s) => s + "T00:00:00-05:00";
+const dLabel = (s) => new Date(s + "T12:00:00Z").toLocaleDateString("es-CO", { day: "numeric", month: "short", timeZone: "UTC" }).replace(".", "");
+const dtLabel = (iso) => new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", hour12: false }).replace(".", "");
+
+let CAT = { cen: [], pre: [], sec: [] };
+const F = LS.get("tb_filtros", null) || { desde: addDays(hoy(), -6), hasta: hoy(), centro: "", tipo: "", q: 6 };
+let page = 0; const PAGE = 50;
+
+/* ---------- Auth ---------- */
+async function boot() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) return enter(session.user);
+  showLogin();
+}
+function showLogin(msg = "") {
+  $("#login").classList.remove("hidden"); $("#shell").classList.add("hidden");
+  $("#login-msg").textContent = msg;
+}
+$("#login-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const b = $("#login-btn"); b.disabled = true; b.textContent = "Ingresando…"; $("#login-msg").textContent = "";
+  const { data, error } = await sb.auth.signInWithPassword({ email: $("#email").value.trim(), password: $("#pass").value });
+  b.disabled = false; b.textContent = "Ingresar";
+  if (error) { $("#login-msg").textContent = error.message === "Invalid login credentials" ? "Correo o contraseña incorrectos." : error.message; return; }
+  enter(data.user);
+};
+async function enter(user) {
+  const { data: ok, error } = await sb.rpc("es_supervisor");
+  if (error || !ok) { await sb.auth.signOut(); return showLogin("Esta cuenta no tiene acceso al tablero. Pida al administrador que la habilite."); }
+  $("#login").classList.add("hidden"); $("#shell").classList.remove("hidden");
+  $("#who").textContent = user.user_metadata?.nombre || user.email;
+  await loadCatalog();
+  initFilters();
+  await refresh();
+  if (user.user_metadata?.cambiar_clave) passwordModal(true);
+}
+$("#btn-out").onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$("#btn-pass").onclick = () => passwordModal(false);
+
+function passwordModal(forced) {
+  $("#overlay").innerHTML = `<div class="modal-bg"><form class="modal" id="pw-form">
+    <h2>${forced ? "Cree su contraseña" : "Cambiar contraseña"}</h2>
+    <p>${forced ? "Está usando una contraseña temporal. Cree una propia para continuar." : "Use al menos 10 caracteres."}</p>
+    <div class="fld"><label class="lbl" for="pw1">Nueva contraseña</label><input class="input" id="pw1" type="password" autocomplete="new-password" minlength="10" required></div>
+    <div class="fld"><label class="lbl" for="pw2">Repítala</label><input class="input" id="pw2" type="password" autocomplete="new-password" minlength="10" required></div>
+    <div class="msg" id="pw-msg" role="alert"></div>
+    <div class="row">${forced ? "" : '<button type="button" class="btn ghost" id="pw-cancel">Cancelar</button>'}<button class="btn" type="submit">Guardar contraseña</button></div>
+  </form></div>`;
+  $("#pw1").focus();
+  if (!forced) $("#pw-cancel").onclick = () => ($("#overlay").innerHTML = "");
+  $("#pw-form").onsubmit = async (e) => {
+    e.preventDefault();
+    const a = $("#pw1").value, b = $("#pw2").value;
+    if (a.length < 10) return ($("#pw-msg").textContent = "Use al menos 10 caracteres.");
+    if (a !== b) return ($("#pw-msg").textContent = "Las contraseñas no coinciden.");
+    const { error } = await sb.auth.updateUser({ password: a, data: { cambiar_clave: false } });
+    if (error) return ($("#pw-msg").textContent = error.message);
+    $("#overlay").innerHTML = "";
+    toastTip("Contraseña actualizada");
+  };
+}
+function toastTip(msg) {
+  const t = document.createElement("div");
+  t.className = "tip"; t.style.cssText = "left:50%;bottom:24px;transform:translateX(-50%);position:fixed"; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+
+/* ---------- Catálogo y filtros ---------- */
+async function loadCatalog() {
+  const [cen, sec, pre] = await Promise.all([
+    sb.from("centros").select("id,nombre,regional_id").order("nombre"),
+    sb.from("secciones").select("id,orden,nombre").order("orden"),
+    sb.from("preguntas").select("id,seccion_id,orden,texto,critica,depende_de").order("seccion_id").order("orden")
+  ]);
+  CAT = { cen: cen.data || [], sec: sec.data || [], pre: pre.data || [] };
+  const secOrd = Object.fromEntries(CAT.sec.map((s) => [s.id, s.orden]));
+  CAT.pre.sort((a, b) => secOrd[a.seccion_id] - secOrd[b.seccion_id] || a.orden - b.orden);
+  $("#f-centro").innerHTML = '<option value="">Todos</option>' + CAT.cen.map((c) => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("");
+}
+function initFilters() {
+  $("#f-desde").value = F.desde; $("#f-hasta").value = F.hasta; $("#f-centro").value = F.centro; $("#f-tipo").value = F.tipo;
+  markQuick();
+  document.querySelectorAll("#quick [data-q]").forEach((b) => b.onclick = () => {
+    const n = Number(b.dataset.q); F.hasta = hoy(); F.desde = addDays(F.hasta, -n); F.q = n;
+    $("#f-desde").value = F.desde; $("#f-hasta").value = F.hasta; markQuick(); page = 0; refresh();
+  });
+  const onF = () => {
+    F.desde = $("#f-desde").value || F.desde; F.hasta = $("#f-hasta").value || F.hasta;
+    if (F.hasta < F.desde) { F.hasta = F.desde; $("#f-hasta").value = F.hasta; }
+    F.centro = $("#f-centro").value; F.tipo = $("#f-tipo").value; F.q = null; markQuick(); page = 0; refresh();
+  };
+  ["#f-desde", "#f-hasta", "#f-centro", "#f-tipo"].forEach((s) => $(s).onchange = onF);
+  $("#btn-refresh").onclick = () => refresh();
+  $("#btn-export").onclick = exportar;
+  let t; $("#f-placa").oninput = (e) => { e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); clearTimeout(t); t = setTimeout(() => { page = 0; loadRegistros(); }, 300); };
+  setInterval(() => { if (!document.hidden && !$("#overlay").innerHTML) refresh(true); }, 120000);
+}
+function markQuick() {
+  document.querySelectorAll("#quick [data-q]").forEach((b) => b.setAttribute("aria-pressed", F.q !== null && Number(b.dataset.q) === F.q && F.hasta === hoy()));
+  LS.set("tb_filtros", F);
+}
+
+/* ---------- Datos ---------- */
+async function refresh(silent) {
+  if (F.q !== null && F.q !== undefined && F.hasta !== hoy()) { F.hasta = hoy(); F.desde = addDays(F.hasta, -F.q); $("#f-desde").value = F.desde; $("#f-hasta").value = F.hasta; }
+  if (!silent) $("#updated").textContent = "Actualizando…";
+  const { data, error } = await sb.rpc("dashboard_resumen", {
+    p_desde: F.desde, p_hasta: F.hasta, p_centro: F.centro ? Number(F.centro) : null, p_tipo: F.tipo || null
+  });
+  if (error) {
+    if (error.code === "42501" || /JWT/.test(error.message)) { await sb.auth.signOut(); return showLogin("Su sesión terminó. Ingrese de nuevo."); }
+    $("#updated").textContent = "Error: " + error.message; return;
+  }
+  renderKpis(data.kpis);
+  renderDias(data.por_dia);
+  renderCentros(data.por_centro);
+  renderFallas(data.top_fallas);
+  renderPlacas(data.placas_reincidentes);
+  await loadRegistros();
+  $("#updated").textContent = "Actualizado " + new Date().toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+function renderKpis(k) {
+  const pct = k.total ? Math.round((k.aptos / k.total) * 1000) / 10 : 0;
+  $("#kpis").innerHTML = `
+    <div class="kpi hero"><div class="v num">${k.total ? pct.toLocaleString("es-CO") + "%" : "—"}</div><div class="l">Vehículos aptos</div><div class="s">${fmt(k.aptos)} de ${fmt(k.total)} checklists</div></div>
+    <div class="kpi"><div class="v num">${fmt(k.total)}</div><div class="l">Checklists</div><div class="s">${dLabel(F.desde)} a ${dLabel(F.hasta)}</div></div>
+    <div class="kpi"><div class="v num" style="color:${k.no_aptos ? "var(--crit-text)" : "inherit"}">${fmt(k.no_aptos)}</div><div class="l">${estadoTag("NO APTO")}</div><div class="s">No debieron operar</div></div>
+    <div class="kpi"><div class="v num">${fmt(k.placas)}</div><div class="l">Placas</div><div class="s">Vehículos inspeccionados</div></div>
+    <div class="kpi"><div class="v num">${fmt(k.conductores)}</div><div class="l">Conductores</div><div class="s">Cédulas distintas</div></div>
+    <div class="kpi"><div class="v num">${Number(k.fallas_promedio).toLocaleString("es-CO")}</div><div class="l">Fallas por checklist</div><div class="s">Promedio de puntos sin cumplir</div></div>`;
+}
+
+/* Barras apiladas por día (SVG) */
+function topRounded(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h);
+  return `M${x},${y + h}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${y + h}Z`;
+}
+function niceMax(v) { if (v <= 5) return 5; const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v / p; return (m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function renderDias(rows) {
+  const map = Object.fromEntries(rows.map((r) => [r.dia, r]));
+  const days = []; for (let d = F.desde; d <= F.hasta; d = addDays(d, 1)) days.push(d);
+  const data = days.map((d) => ({ d, t: map[d]?.total || 0, n: map[d]?.no_aptos || 0 }));
+  if (!data.some((x) => x.t)) { $("#ch-dias").innerHTML = '<div class="empty">No hay checklists en este periodo.</div>'; return; }
+  const W = 1240, H = 230, pl = 44, pr = 6, pt = 8, pb = 26;
+  const max = niceMax(Math.max(...data.map((x) => x.t)));
+  const cw = (W - pl - pr) / data.length, bw = Math.max(2, Math.min(34, cw * 0.62));
+  const y = (v) => pt + (H - pt - pb) * (1 - v / max);
+  let g = "";
+  for (let i = 0; i <= 4; i++) { const v = (max / 4) * i, yy = y(v); g += `<line x1="${pl}" x2="${W - pr}" y1="${yy}" y2="${yy}" stroke="var(--grid)"/><text x="${pl - 8}" y="${yy + 4}" text-anchor="end">${fmt(v)}</text>`; }
+  const every = Math.ceil(data.length / 12);
+  let bars = "", hits = "", lab = "";
+  data.forEach((x, i) => {
+    const cx = pl + cw * i + cw / 2, bx = cx - bw / 2;
+    const ap = x.t - x.n;
+    if (ap > 0) { const y0 = y(ap), h = y(0) - y0; bars += x.n > 0 ? `<rect x="${bx}" y="${y0}" width="${bw}" height="${h}" fill="var(--good)"/>` : `<path d="${topRounded(bx, y0, bw, h, 4)}" fill="var(--good)"/>`; }
+    if (x.n > 0) { const top = y(x.t), bottom = ap > 0 ? y(ap) - 2 : y(0); bars += `<path d="${topRounded(bx, top, bw, Math.max(1, bottom - top), 4)}" fill="var(--critical)"/>`; }
+    hits += `<rect x="${pl + cw * i}" y="${pt}" width="${cw}" height="${H - pt - pb}" fill="transparent" data-tip="<b>${dLabel(x.d)}</b>${fmt(x.t)} checklists<br>Apto: ${fmt(ap)}<br>No apto: ${fmt(x.n)}"/>`;
+    if (i % every === 0) lab += `<text x="${cx}" y="${H - 8}" text-anchor="middle">${dLabel(x.d)}</text>`;
+  });
+  $("#ch-dias").innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Checklists por día, aptos y no aptos">${g}<line x1="${pl}" x2="${W - pr}" y1="${y(0)}" y2="${y(0)}" stroke="#C9CCC4"/>${bars}${lab}${hits}</svg>`;
+}
+
+function renderCentros(rows) {
+  if (!rows.length) { $("#ch-centros").innerHTML = '<div class="empty">Sin datos.</div>'; return; }
+  const max = Math.max(...rows.map((r) => r.total));
+  $("#ch-centros").innerHTML = `<div class="hbars">${rows.map((r) => {
+    const ap = r.total - r.no_aptos;
+    return `<div class="hb" data-tip="<b>${esc(r.centro)}</b>${fmt(r.total)} checklists<br>Apto: ${fmt(ap)}<br>No apto: ${fmt(r.no_aptos)}">
+      <span class="name">${esc(r.centro)}</span>
+      <span class="track" style="width:${(r.total / max) * 100}%">${ap ? `<span class="seg" style="flex:${ap};background:var(--good)"></span>` : ""}${r.no_aptos ? `<span class="seg" style="flex:${r.no_aptos};background:var(--critical)"></span>` : ""}</span>
+      <span class="val num">${fmt(r.total)}${r.no_aptos ? ` <span class="st bad">${fmt(r.no_aptos)}</span>` : ""}</span></div>`;
+  }).join("")}</div>`;
+}
+
+function renderFallas(rows) {
+  if (!rows.length) { $("#ch-fallas").innerHTML = '<div class="empty">Ningún punto marcado como no cumple en el periodo.</div>'; return; }
+  const max = Math.max(...rows.map((r) => r.fallas));
+  $("#ch-fallas").innerHTML = `<div class="hbars">${rows.map((r) => `
+    <div class="hb" data-tip="<b>${esc(r.pregunta)}</b>${esc(r.seccion)}<br>${fmt(r.fallas)} veces no cumple${r.critica ? "<br>Punto crítico" : ""}">
+      <span class="name">${esc(r.pregunta)}${r.critica ? '<span class="tag">Crítico</span>' : ""}</span>
+      <span class="track" style="width:${(r.fallas / max) * 100}%"><span class="seg" style="flex:1;background:var(--series)"></span></span>
+      <span class="val num">${fmt(r.fallas)}</span></div>`).join("")}</div>`;
+}
+
+function renderPlacas(rows) {
+  if (!rows.length) { $("#tb-placas").innerHTML = '<div class="empty">Ninguna placa con novedades en el periodo.</div>'; return; }
+  $("#tb-placas").innerHTML = `<table><thead><tr><th>Placa</th><th class="r">Checklists</th><th class="r">No aptos</th><th class="r">Puntos sin cumplir</th><th>Último checklist</th></tr></thead><tbody>
+    ${rows.map((r) => `<tr class="click" data-placa="${esc(r.placa)}"><td><span class="plate">${esc(r.placa)}</span></td><td class="r num">${fmt(r.checklists)}</td><td class="r num">${r.no_aptos ? `<span class="st bad">${ICON.bad}${fmt(r.no_aptos)}</span>` : "0"}</td><td class="r num">${fmt(r.fallas)}</td><td>${dtLabel(r.ultimo)}</td></tr>`).join("")}
+  </tbody></table>`;
+  document.querySelectorAll("[data-placa]").forEach((tr) => tr.onclick = () => {
+    $("#f-placa").value = tr.dataset.placa; page = 0; loadRegistros();
+    $("#tb-reg").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+async function loadRegistros() {
+  let q = sb.from("checklists")
+    .select("id,creado_en,tipo,placa,conductor,cedula,km,estado,total_no_cumple,criticos_no_cumple,centros(nombre)", { count: "exact" })
+    .gte("creado_en", startOf(F.desde)).lt("creado_en", startOf(addDays(F.hasta, 1)))
+    .order("creado_en", { ascending: false }).range(page * PAGE, page * PAGE + PAGE - 1);
+  if (F.centro) q = q.eq("centro_id", Number(F.centro));
+  if (F.tipo) q = q.eq("tipo", F.tipo);
+  const placa = $("#f-placa").value.trim();
+  if (placa) q = q.ilike("placa", `%${placa}%`);
+  const { data, count: total, error } = await q;
+  const count = total ?? (page * PAGE + (data?.length || 0));
+  if (error) { $("#tb-reg").innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
+  if (!data.length) { $("#tb-reg").innerHTML = '<div class="empty">No hay registros con estos filtros.</div>'; $("#pager").innerHTML = ""; return; }
+  $("#tb-reg").innerHTML = `<table><thead><tr><th>Fecha</th><th>Placa</th><th>Tipo</th><th>Centro</th><th>Conductor</th><th class="r">Km</th><th>Resultado</th><th class="r">Sin cumplir</th></tr></thead><tbody>
+    ${data.map((r) => `<tr class="click" data-id="${r.id}" tabindex="0"><td class="num">${dtLabel(r.creado_en)}</td><td><span class="plate">${esc(r.placa)}</span></td><td>${esc(r.tipo)}</td><td>${esc(r.centros?.nombre)}</td><td>${esc(r.conductor)}</td><td class="r num">${fmt(r.km)}</td><td>${estadoTag(r.estado)}</td><td class="r num">${fmt(r.total_no_cumple)}${r.criticos_no_cumple ? ` <span class="tag">${r.criticos_no_cumple} crít.</span>` : ""}</td></tr>`).join("")}
+  </tbody></table>`;
+  const pages = Math.ceil(count / PAGE);
+  $("#pager").innerHTML = `<span>${fmt(page * PAGE + 1)}–${fmt(Math.min(count, (page + 1) * PAGE))} de ${fmt(count)}</span>
+    <button class="btn ghost" type="button" id="pg-prev" ${page === 0 ? "disabled" : ""}>Anterior</button>
+    <button class="btn ghost" type="button" id="pg-next" ${page >= pages - 1 ? "disabled" : ""}>Siguiente</button>`;
+  $("#pg-prev").onclick = () => { page--; loadRegistros(); };
+  $("#pg-next").onclick = () => { page++; loadRegistros(); };
+  document.querySelectorAll("#tb-reg [data-id]").forEach((tr) => {
+    const r = data.find((x) => x.id === tr.dataset.id);
+    tr.onclick = () => detalle(r);
+    tr.onkeydown = (e) => { if (e.key === "Enter") detalle(r); };
+  });
+}
+
+async function detalle(r) {
+  $("#overlay").innerHTML = `<div class="drawer-bg" id="dbg"></div><aside class="drawer" role="dialog" aria-label="Detalle del checklist"><div class="empty">Cargando…</div></aside>`;
+  $("#dbg").onclick = closeDrawer;
+  const [{ data: items }, { data: head }] = await Promise.all([
+    sb.from("checklist_items").select("pregunta_id,resultado,comentario").eq("checklist_id", r.id),
+    sb.from("checklists").select("conductor_apto,vehiculo_apto,observaciones,recibido_en").eq("id", r.id).single()
+  ]);
+  const byQ = Object.fromEntries((items || []).map((i) => [i.pregunta_id, i]));
+  let body = "";
+  for (const s of CAT.sec) {
+    const qs = CAT.pre.filter((q) => q.seccion_id === s.id && byQ[q.id]);
+    if (!qs.length) continue;
+    body += `<h3>${esc(s.nombre)}</h3>` + qs.map((q) => {
+      const it = byQ[q.id]; const res = it.resultado;
+      const cls = res === "NO CUMPLE" ? "no" : res === "N/A" || res === "NO" ? "na" : "ok";
+      return `<div class="ans ${cls}"><span class="res">${res === "NO CUMPLE" ? ICON.bad.replace('aria-hidden="true"', 'aria-hidden="true" width="12" height="12"') + " " : ""}${esc(res === "SI" ? "Sí" : res === "NO" ? "No" : res === "N/A" ? "No aplica" : res === "CUMPLE" ? "Cumple" : "No cumple")}</span><span>${esc(q.texto)}${q.critica ? '<span class="tag">Crítico</span>' : ""}${it.comentario ? `<small>${esc(it.comentario)}</small>` : ""}</span></div>`;
+    }).join("");
+  }
+  $(".drawer").innerHTML = `
+    <div class="top"><span class="plate lg">${esc(r.placa)}</span>${estadoTag(r.estado)}<button class="btn ghost" type="button" id="dclose">Cerrar</button></div>
+    <dl>
+      <dt>Fecha</dt><dd>${dtLabel(r.creado_en)}</dd>
+      <dt>Tipo</dt><dd>${esc(r.tipo)}</dd>
+      <dt>Centro</dt><dd>${esc(r.centros?.nombre)}</dd>
+      <dt>Conductor</dt><dd>${esc(r.conductor)} · CC ${esc(r.cedula)}</dd>
+      <dt>Kilometraje</dt><dd>${fmt(r.km)} km</dd>
+      <dt>Conductor apto</dt><dd>${head?.conductor_apto ? "Sí" : "No"}</dd>
+      <dt>Vehículo apto</dt><dd>${head?.vehiculo_apto ? "Sí" : "No"}</dd>
+      ${head?.observaciones ? `<dt>Observaciones</dt><dd>${esc(head.observaciones)}</dd>` : ""}
+    </dl>${body}`;
+  $("#dclose").onclick = closeDrawer;
+  $("#dclose").focus();
+}
+function closeDrawer() { $("#overlay").innerHTML = ""; }
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && $(".drawer")) closeDrawer(); });
+
+/* Tooltip compartido */
+const tip = $("#tip");
+document.addEventListener("mousemove", (e) => {
+  const t = e.target.closest?.("[data-tip]");
+  if (!t) { tip.classList.add("hidden"); return; }
+  tip.innerHTML = t.dataset.tip; tip.classList.remove("hidden");
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY - h - 10;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y < 8) y = e.clientY + 16;
+  tip.style.left = x + "px"; tip.style.top = y + "px";
+});
+
+/* ---------- Exportación ---------- */
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve();
+  return new Promise((ok, fail) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = ok; s.onerror = fail; document.head.appendChild(s); });
+}
+async function exportar() {
+  const b = $("#btn-export"); b.disabled = true; b.textContent = "Preparando…";
+  try {
+    await loadXLSX();
+    const all = []; let off = 0;
+    for (;;) {
+      const { data, error } = await sb.rpc("exportar_checklists", { p_desde: F.desde, p_hasta: F.hasta, p_centro: F.centro ? Number(F.centro) : null, p_tipo: F.tipo || null, p_offset: off, p_limit: 1000 });
+      if (error) throw error;
+      all.push(...data); off += data.length;
+      b.textContent = `Descargando ${fmt(all.length)}…`;
+      if (data.length < 1000) break;
+    }
+    if (!all.length) { toastTip("No hay checklists para exportar con estos filtros"); return; }
+    const secName = Object.fromEntries(CAT.sec.map((s) => [s.id, s.nombre]));
+    const head = ["Fecha", "Regional", "Centro", "Tipo", "Placa", "Conductor", "Cédula", "Km", "Resultado", "Puntos sin cumplir", "Críticos sin cumplir", "Conductor apto", "Vehículo apto", "Observaciones"];
+    const qCols = CAT.pre.map((q) => `${secName[q.seccion_id]}: ${q.texto}`);
+    const rows = all.map((r) => [r.fecha, r.regional, r.centro, r.tipo, r.placa, r.conductor, r.cedula, r.km, r.estado, r.total_no_cumple, r.criticos_no_cumple, r.conductor_apto, r.vehiculo_apto, r.observaciones || "",
+      ...CAT.pre.map((q) => r.respuestas?.[q.id] ?? "")]);
+    const ws = XLSX.utils.aoa_to_sheet([[...head, ...qCols], ...rows]);
+    ws["!cols"] = [{ wch: 17 }, { wch: 9 }, { wch: 16 }, { wch: 9 }, { wch: 9 }, { wch: 26 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 40 }, ...qCols.map(() => ({ wch: 22 }))];
+    ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: head.length + qCols.length - 1 } }) };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Checklists");
+    const centro = F.centro ? "_" + (CAT.cen.find((c) => String(c.id) === F.centro)?.nombre || "").replace(/\s+/g, "-") : "";
+    XLSX.writeFile(wb, `checklists_${F.desde}_a_${F.hasta}${centro}.xlsx`);
+  } catch (e) {
+    toastTip("No se pudo exportar: " + (e.message || e));
+  } finally { b.disabled = false; b.textContent = "Exportar Excel"; }
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
