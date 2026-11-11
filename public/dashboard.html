@@ -144,7 +144,7 @@ tbody tr.click:hover{background:#F5F6F2}
 <section class="login" id="login">
   <form id="login-form" autocomplete="on">
     <span class="plate lg">TABLERO</span>
-    <h1>Check List Camiones</h1>
+    <h1>Check List BU COL</h1>
     <p>Acceso para supervisores de flota.</p>
     <div class="fld"><label class="lbl" for="email">Correo</label><input class="input" id="email" type="email" autocomplete="username" required></div>
     <div class="fld"><label class="lbl" for="pass">Contraseña</label><input class="input" id="pass" type="password" autocomplete="current-password" required></div>
@@ -155,7 +155,7 @@ tbody tr.click:hover{background:#F5F6F2}
 
 <div id="shell" class="hidden">
   <header class="bar"><div class="in">
-    <h1>Check List Camiones <small>Tablero de supervisión</small></h1>
+    <h1>Check List BU COL <small>Tablero de supervisión</small></h1>
     <span class="who" id="who"></span>
     <button class="btn ghost" type="button" id="btn-pass">Cambiar contraseña</button>
     <button class="btn ghost" type="button" id="btn-out">Salir</button>
@@ -163,6 +163,11 @@ tbody tr.click:hover{background:#F5F6F2}
 
   <div class="page">
     <div class="filters" role="search">
+      <div class="fld"><span class="lbl">Módulo</span>
+        <div class="quick" id="modulo">
+          <button type="button" data-m="camiones">Camiones</button>
+          <button type="button" data-m="montacargas">Montacargas FLT</button>
+        </div></div>
       <div class="fld"><span class="lbl">Periodo</span>
         <div class="quick" id="quick">
           <button type="button" data-q="0">Hoy</button>
@@ -172,7 +177,7 @@ tbody tr.click:hover{background:#F5F6F2}
       <div class="fld"><label class="lbl" for="f-desde">Desde</label><input class="input" type="date" id="f-desde"></div>
       <div class="fld"><label class="lbl" for="f-hasta">Hasta</label><input class="input" type="date" id="f-hasta"></div>
       <div class="fld"><label class="lbl" for="f-centro">Centro</label><select class="input" id="f-centro"><option value="">Todos</option></select></div>
-      <div class="fld"><label class="lbl" for="f-tipo">Tipo</label><select class="input" id="f-tipo"><option value="">Todos</option><option>Salida</option><option>Retorno</option><option>Relevo</option></select></div>
+      <div class="fld"><label class="lbl" for="f-tipo">Tipo</label><select class="input" id="f-tipo"></select></div>
       <span class="spacer"></span>
       <span class="updated" id="updated"></span>
       <button class="btn ghost" type="button" id="btn-refresh">Actualizar</button>
@@ -196,7 +201,7 @@ tbody tr.click:hover{background:#F5F6F2}
         <div id="ch-fallas"></div>
       </section>
       <section class="panel c12">
-        <h2>Placas con novedades</h2><div class="sub">Vehículos con algún checklist no apto o con 3 o más puntos sin cumplir</div>
+        <h2 id="h-placas">Placas con novedades</h2><div class="sub" id="s-placas">Vehículos con algún checklist no apto o con 3 o más puntos sin cumplir</div>
         <div class="tablewrap" id="tb-placas"></div>
       </section>
       <section class="panel c12">
@@ -238,7 +243,26 @@ const dtLabel = (iso) => new Date(iso).toLocaleString("es-CO", { timeZone: "Amer
 
 let CAT = { cen: [], pre: [], sec: [] };
 const F = LS.get("tb_filtros", null) || { desde: addDays(hoy(), -6), hasta: hoy(), centro: "", tipo: "", q: 6 };
+F.modulo = F.modulo === "montacargas" ? "montacargas" : "camiones";
 let page = 0; const PAGE = 50;
+const ETQ = {
+  camiones: { equipo: "Placa", equipos: "Placas", vehiculos: "Vehículos", persona: "Conductor", personas: "Conductores", medidor: "Km", medidorLargo: "Kilometraje", unidad: "km", tipos: ["Salida", "Retorno", "Relevo"], equipoApto: "Vehículo apto" },
+  montacargas: { equipo: "Equipo", equipos: "Equipos", vehiculos: "Montacargas", persona: "Operador", personas: "Operadores", medidor: "Horómetro", medidorLargo: "Horómetro", unidad: "h", tipos: ["Inicio de turno", "Relevo", "Fin de turno"], equipoApto: "Montacargas apto" }
+};
+const L = () => ETQ[F.modulo];
+const medidor = (r) => F.modulo === "montacargas" ? r.horometro : r.km;
+const preguntasModulo = () => CAT.pre.filter((q) => CAT.sec.find((s) => s.id === q.seccion_id)?.modulo === F.modulo);
+function pintarModulo() {
+  document.querySelectorAll("#modulo [data-m]").forEach((b) => b.setAttribute("aria-pressed", b.dataset.m === F.modulo));
+  const tipos = L().tipos;
+  if (F.tipo && !tipos.includes(F.tipo)) F.tipo = "";
+  $("#f-tipo").innerHTML = '<option value="">Todos</option>' + tipos.map((t) => `<option>${t}</option>`).join("");
+  $("#f-tipo").value = F.tipo;
+  $("#h-placas").textContent = `${L().equipos} con novedades`;
+  $("#s-placas").textContent = `${L().vehiculos} con algún checklist no apto o con 3 o más puntos sin cumplir`;
+  $("#f-placa").placeholder = `Buscar ${L().equipo.toLowerCase()}`;
+  $("#f-placa").setAttribute("aria-label", `Buscar ${L().equipo.toLowerCase()}`);
+}
 
 /* ---------- Auth ---------- */
 async function boot() {
@@ -303,7 +327,7 @@ function toastTip(msg) {
 async function loadCatalog() {
   const [cen, sec, pre] = await Promise.all([
     sb.from("centros").select("id,nombre,regional_id").order("nombre"),
-    sb.from("secciones").select("id,orden,nombre").order("orden"),
+    sb.from("secciones").select("id,orden,nombre,modulo").order("orden"),
     sb.from("preguntas").select("id,seccion_id,orden,texto,critica,depende_de").order("seccion_id").order("orden")
   ]);
   CAT = { cen: cen.data || [], sec: sec.data || [], pre: pre.data || [] };
@@ -312,8 +336,13 @@ async function loadCatalog() {
   $("#f-centro").innerHTML = '<option value="">Todos</option>' + CAT.cen.map((c) => `<option value="${c.id}">${esc(c.nombre)}</option>`).join("");
 }
 function initFilters() {
+  pintarModulo();
   $("#f-desde").value = F.desde; $("#f-hasta").value = F.hasta; $("#f-centro").value = F.centro; $("#f-tipo").value = F.tipo;
   markQuick();
+  document.querySelectorAll("#modulo [data-m]").forEach((b) => b.onclick = () => {
+    if (F.modulo === b.dataset.m) return;
+    F.modulo = b.dataset.m; F.tipo = ""; $("#f-placa").value = ""; page = 0; pintarModulo(); markQuick(); refresh();
+  });
   document.querySelectorAll("#quick [data-q]").forEach((b) => b.onclick = () => {
     const n = Number(b.dataset.q); F.hasta = hoy(); F.desde = addDays(F.hasta, -n); F.q = n;
     $("#f-desde").value = F.desde; $("#f-hasta").value = F.hasta; markQuick(); page = 0; refresh();
@@ -339,7 +368,7 @@ async function refresh(silent) {
   if (F.q !== null && F.q !== undefined && F.hasta !== hoy()) { F.hasta = hoy(); F.desde = addDays(F.hasta, -F.q); $("#f-desde").value = F.desde; $("#f-hasta").value = F.hasta; }
   if (!silent) $("#updated").textContent = "Actualizando…";
   const { data, error } = await sb.rpc("dashboard_resumen", {
-    p_desde: F.desde, p_hasta: F.hasta, p_centro: F.centro ? Number(F.centro) : null, p_tipo: F.tipo || null
+    p_desde: F.desde, p_hasta: F.hasta, p_centro: F.centro ? Number(F.centro) : null, p_tipo: F.tipo || null, p_modulo: F.modulo
   });
   if (error) {
     if (error.code === "42501" || /JWT/.test(error.message)) { await sb.auth.signOut(); return showLogin("Su sesión terminó. Ingrese de nuevo."); }
@@ -360,8 +389,8 @@ function renderKpis(k) {
     <div class="kpi hero"><div class="v num">${k.total ? pct.toLocaleString("es-CO") + "%" : "—"}</div><div class="l">Vehículos aptos</div><div class="s">${fmt(k.aptos)} de ${fmt(k.total)} checklists</div></div>
     <div class="kpi"><div class="v num">${fmt(k.total)}</div><div class="l">Checklists</div><div class="s">${dLabel(F.desde)} a ${dLabel(F.hasta)}</div></div>
     <div class="kpi"><div class="v num" style="color:${k.no_aptos ? "var(--crit-text)" : "inherit"}">${fmt(k.no_aptos)}</div><div class="l">${estadoTag("NO APTO")}</div><div class="s">No debieron operar</div></div>
-    <div class="kpi"><div class="v num">${fmt(k.placas)}</div><div class="l">Placas</div><div class="s">Vehículos inspeccionados</div></div>
-    <div class="kpi"><div class="v num">${fmt(k.conductores)}</div><div class="l">Conductores</div><div class="s">Cédulas distintas</div></div>
+    <div class="kpi"><div class="v num">${fmt(k.placas)}</div><div class="l">${L().equipos}</div><div class="s">${L().vehiculos} inspeccionados</div></div>
+    <div class="kpi"><div class="v num">${fmt(k.conductores)}</div><div class="l">${L().personas}</div><div class="s">Cédulas distintas</div></div>
     <div class="kpi"><div class="v num">${Number(k.fallas_promedio).toLocaleString("es-CO")}</div><div class="l">Fallas por checklist</div><div class="s">Promedio de puntos sin cumplir</div></div>`;
 }
 
@@ -419,7 +448,7 @@ function renderFallas(rows) {
 
 function renderPlacas(rows) {
   if (!rows.length) { $("#tb-placas").innerHTML = '<div class="empty">Ninguna placa con novedades en el periodo.</div>'; return; }
-  $("#tb-placas").innerHTML = `<table><thead><tr><th>Placa</th><th class="r">Checklists</th><th class="r">No aptos</th><th class="r">Puntos sin cumplir</th><th>Último checklist</th></tr></thead><tbody>
+  $("#tb-placas").innerHTML = `<table><thead><tr><th>${L().equipo}</th><th class="r">Checklists</th><th class="r">No aptos</th><th class="r">Puntos sin cumplir</th><th>Último checklist</th></tr></thead><tbody>
     ${rows.map((r) => `<tr class="click" data-placa="${esc(r.placa)}"><td><span class="plate">${esc(r.placa)}</span></td><td class="r num">${fmt(r.checklists)}</td><td class="r num">${r.no_aptos ? `<span class="st bad">${ICON.bad}${fmt(r.no_aptos)}</span>` : "0"}</td><td class="r num">${fmt(r.fallas)}</td><td>${dtLabel(r.ultimo)}</td></tr>`).join("")}
   </tbody></table>`;
   document.querySelectorAll("[data-placa]").forEach((tr) => tr.onclick = () => {
@@ -430,7 +459,8 @@ function renderPlacas(rows) {
 
 async function loadRegistros() {
   let q = sb.from("checklists")
-    .select("id,creado_en,tipo,placa,conductor,cedula,km,estado,total_no_cumple,criticos_no_cumple,centros(nombre)", { count: "exact" })
+    .select("id,creado_en,tipo,placa,conductor,cedula,km,horometro,equipo_tipo,turno,estado,total_no_cumple,criticos_no_cumple,centros(nombre)", { count: "exact" })
+    .eq("modulo", F.modulo)
     .gte("creado_en", startOf(F.desde)).lt("creado_en", startOf(addDays(F.hasta, 1)))
     .order("creado_en", { ascending: false }).range(page * PAGE, page * PAGE + PAGE - 1);
   if (F.centro) q = q.eq("centro_id", Number(F.centro));
@@ -441,8 +471,8 @@ async function loadRegistros() {
   const count = total ?? (page * PAGE + (data?.length || 0));
   if (error) { $("#tb-reg").innerHTML = `<div class="empty">${esc(error.message)}</div>`; return; }
   if (!data.length) { $("#tb-reg").innerHTML = '<div class="empty">No hay registros con estos filtros.</div>'; $("#pager").innerHTML = ""; return; }
-  $("#tb-reg").innerHTML = `<table><thead><tr><th>Fecha</th><th>Placa</th><th>Tipo</th><th>Centro</th><th>Conductor</th><th class="r">Km</th><th>Resultado</th><th class="r">Sin cumplir</th></tr></thead><tbody>
-    ${data.map((r) => `<tr class="click" data-id="${r.id}" tabindex="0"><td class="num">${dtLabel(r.creado_en)}</td><td><span class="plate">${esc(r.placa)}</span></td><td>${esc(r.tipo)}</td><td>${esc(r.centros?.nombre)}</td><td>${esc(r.conductor)}</td><td class="r num">${fmt(r.km)}</td><td>${estadoTag(r.estado)}</td><td class="r num">${fmt(r.total_no_cumple)}${r.criticos_no_cumple ? ` <span class="tag">${r.criticos_no_cumple} crít.</span>` : ""}</td></tr>`).join("")}
+  $("#tb-reg").innerHTML = `<table><thead><tr><th>Fecha</th><th>${L().equipo}</th><th>Tipo</th><th>Centro</th><th>${L().persona}</th><th class="r">${L().medidor}</th><th>Resultado</th><th class="r">Sin cumplir</th></tr></thead><tbody>
+    ${data.map((r) => `<tr class="click" data-id="${r.id}" tabindex="0"><td class="num">${dtLabel(r.creado_en)}</td><td><span class="plate">${esc(r.placa)}</span></td><td>${esc(r.tipo)}</td><td>${esc(r.centros?.nombre)}</td><td>${esc(r.conductor)}</td><td class="r num">${fmt(medidor(r))}</td><td>${estadoTag(r.estado)}</td><td class="r num">${fmt(r.total_no_cumple)}${r.criticos_no_cumple ? ` <span class="tag">${r.criticos_no_cumple} crít.</span>` : ""}</td></tr>`).join("")}
   </tbody></table>`;
   const pages = Math.ceil(count / PAGE);
   $("#pager").innerHTML = `<span>${fmt(page * PAGE + 1)}–${fmt(Math.min(count, (page + 1) * PAGE))} de ${fmt(count)}</span>
@@ -481,10 +511,11 @@ async function detalle(r) {
       <dt>Fecha</dt><dd>${dtLabel(r.creado_en)}</dd>
       <dt>Tipo</dt><dd>${esc(r.tipo)}</dd>
       <dt>Centro</dt><dd>${esc(r.centros?.nombre)}</dd>
-      <dt>Conductor</dt><dd>${esc(r.conductor)} · CC ${esc(r.cedula)}</dd>
-      <dt>Kilometraje</dt><dd>${fmt(r.km)} km</dd>
-      <dt>Conductor apto</dt><dd>${head?.conductor_apto ? "Sí" : "No"}</dd>
-      <dt>Vehículo apto</dt><dd>${head?.vehiculo_apto ? "Sí" : "No"}</dd>
+      <dt>${L().persona}</dt><dd>${esc(r.conductor)} · CC ${esc(r.cedula)}</dd>
+      <dt>${L().medidorLargo}</dt><dd>${fmt(medidor(r))} ${L().unidad}</dd>
+      ${r.equipo_tipo ? `<dt>Tipo de equipo</dt><dd>${esc(r.equipo_tipo)}</dd><dt>Turno</dt><dd>${esc(r.turno)}</dd>` : ""}
+      <dt>${L().persona} apto</dt><dd>${head?.conductor_apto ? "Sí" : "No"}</dd>
+      <dt>${L().equipoApto}</dt><dd>${head?.vehiculo_apto ? "Sí" : "No"}</dd>
       ${head?.observaciones ? `<dt>Observaciones</dt><dd>${esc(head.observaciones)}</dd>` : ""}
     </dl>${body}`;
   $("#dclose").onclick = closeDrawer;
@@ -517,7 +548,7 @@ async function exportar() {
     await loadXLSX();
     const all = []; let off = 0;
     for (;;) {
-      const { data, error } = await sb.rpc("exportar_checklists", { p_desde: F.desde, p_hasta: F.hasta, p_centro: F.centro ? Number(F.centro) : null, p_tipo: F.tipo || null, p_offset: off, p_limit: 1000 });
+      const { data, error } = await sb.rpc("exportar_checklists", { p_desde: F.desde, p_hasta: F.hasta, p_centro: F.centro ? Number(F.centro) : null, p_tipo: F.tipo || null, p_offset: off, p_limit: 1000, p_modulo: F.modulo });
       if (error) throw error;
       all.push(...data); off += data.length;
       b.textContent = `Descargando ${fmt(all.length)}…`;
@@ -525,17 +556,19 @@ async function exportar() {
     }
     if (!all.length) { toastTip("No hay checklists para exportar con estos filtros"); return; }
     const secName = Object.fromEntries(CAT.sec.map((s) => [s.id, s.nombre]));
-    const head = ["Fecha", "Regional", "Centro", "Tipo", "Placa", "Conductor", "Cédula", "Km", "Resultado", "Puntos sin cumplir", "Críticos sin cumplir", "Conductor apto", "Vehículo apto", "Observaciones"];
-    const qCols = CAT.pre.map((q) => `${secName[q.seccion_id]}: ${q.texto}`);
-    const rows = all.map((r) => [r.fecha, r.regional, r.centro, r.tipo, r.placa, r.conductor, r.cedula, r.km, r.estado, r.total_no_cumple, r.criticos_no_cumple, r.conductor_apto, r.vehiculo_apto, r.observaciones || "",
-      ...CAT.pre.map((q) => r.respuestas?.[q.id] ?? "")]);
+    const flt = F.modulo === "montacargas";
+    const pre = preguntasModulo();
+    const head = ["Fecha", "Regional", "Centro", "Tipo", L().equipo, ...(flt ? ["Tipo de equipo", "Turno"] : []), L().persona, "Cédula", L().medidorLargo, "Resultado", "Puntos sin cumplir", "Críticos sin cumplir", `${L().persona} apto`, L().equipoApto, "Observaciones"];
+    const qCols = pre.map((q) => `${secName[q.seccion_id]}: ${q.texto}`);
+    const rows = all.map((r) => [r.fecha, r.regional, r.centro, r.tipo, r.placa, ...(flt ? [r.equipo_tipo, r.turno] : []), r.conductor, r.cedula, flt ? r.horometro : r.km, r.estado, r.total_no_cumple, r.criticos_no_cumple, r.conductor_apto, r.vehiculo_apto, r.observaciones || "",
+      ...pre.map((q) => r.respuestas?.[q.id] ?? "")]);
     const ws = XLSX.utils.aoa_to_sheet([[...head, ...qCols], ...rows]);
-    ws["!cols"] = [{ wch: 17 }, { wch: 9 }, { wch: 16 }, { wch: 9 }, { wch: 9 }, { wch: 26 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 40 }, ...qCols.map(() => ({ wch: 22 }))];
+    ws["!cols"] = [{ wch: 17 }, { wch: 9 }, { wch: 16 }, { wch: 9 }, { wch: 9 }, ...(flt ? [{ wch: 11 }, { wch: 8 }] : []), { wch: 26 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 9 }, { wch: 40 }, ...qCols.map(() => ({ wch: 22 }))];
     ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length, c: head.length + qCols.length - 1 } }) };
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Checklists");
     const centro = F.centro ? "_" + (CAT.cen.find((c) => String(c.id) === F.centro)?.nombre || "").replace(/\s+/g, "-") : "";
-    XLSX.writeFile(wb, `checklists_${F.desde}_a_${F.hasta}${centro}.xlsx`);
+    XLSX.writeFile(wb, `${flt ? "montacargas" : "camiones"}_${F.desde}_a_${F.hasta}${centro}.xlsx`);
   } catch (e) {
     toastTip("No se pudo exportar: " + (e.message || e));
   } finally { b.disabled = false; b.textContent = "Exportar Excel"; }
